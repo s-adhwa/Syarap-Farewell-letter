@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Syarap's Farewell Realm</title>
+<meta name="description" content="An interactive Minecraft Bedrock-styled farewell realm for Syarap.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#1e1e1e;
+    --bg-1:#313131;
+    --panel:#c6c6c6;
+    --panel-lo:#a5a5a5;
+    --panel-hi:#eaeaea;
+    --slot:#8b8b8b;
+    --slot-dark:#565656;
+    --border-dark:#373737;
+    --border-darker:#161616;
+    --ink:#2b2b2b;
+    --yellow:#ffff55;
+    --aqua:#55ffff;
+    --green:#55ff55;
+    --gold:#ffaa00;
+    --purple:#a343e0;
+    --purple-deep:#5c1f8a;
+    --red:#ff5555;
+    --topbar-h:64px;
+    --hotbar-h:96px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'VT323', ui-monospace, monospace;
+    color:var(--panel-hi);
+    background:var(--bg-0);
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  img{image-rendering:pixelated;image-rendering:-moz-crisp-edges;image-rendering:crisp-edges;}
+  button{font-family:inherit;cursor:pointer;}
+  ::selection{background:var(--gold);color:var(--ink);}
+
+  /* ---------- ambient bedrock backdrop ---------- */
+  .bedrock-bg{
+    position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.035) 0, transparent 3%),
+      radial-gradient(circle at 85% 10%, rgba(255,255,255,0.03) 0, transparent 4%),
+      radial-gradient(circle at 60% 70%, rgba(0,0,0,0.25) 0, transparent 6%),
+      radial-gradient(circle at 30% 85%, rgba(0,0,0,0.25) 0, transparent 5%),
+      repeating-linear-gradient(45deg, var(--bg-1) 0 18px, var(--bg-0) 18px 36px);
+    background-size:auto, auto, auto, auto, 52px 52px;
+  }
+  .grain-overlay{
+    position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  .firefly{
+    position:fixed;width:3px;height:3px;background:var(--yellow);z-index:1;pointer-events:none;
+    box-shadow:0 0 6px 1px rgba(255,255,85,.8);
+    animation:drift linear infinite;opacity:0;
+  }
+  @keyframes drift{
+    0%{opacity:0;transform:translate(0,0);}
+    10%{opacity:.8;}
+    90%{opacity:.6;}
+    100%{opacity:0;transform:translate(var(--dx),var(--dy));}
+  }
+
+  /* ---------- layout shell ---------- */
+  #app{position:relative;z-index:2;min-height:100vh;display:flex;flex-direction:column;}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;height:var(--topbar-h);z-index:40;
+    background:linear-gradient(180deg, #3d3d3d, var(--bg-1) 60%, var(--bg-0));
+    border-bottom:3px solid var(--border-darker);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 14px;gap:10px;
+    box-shadow:0 4px 14px rgba(0,0,0,.5);
+  }
+  .realm-title-wrap{display:flex;align-items:baseline;gap:10px;min-width:0;overflow:hidden;}
+  .realm-title-btn{
+    background:none;border:none;padding:2px;margin:0;font:inherit;display:inline-block;
+    min-width:0;overflow:hidden;-webkit-tap-highlight-color:transparent;border-radius:3px;
+  }
+  .realm-title-btn:hover .realm-title{filter:brightness(1.15);}
+  .realm-title-btn:active .realm-title{transform:translateY(1px);}
+  .realm-title-btn:focus-visible{outline:2px solid var(--aqua);outline-offset:3px;}
+  .realm-title{
+    display:inline-block;
+    font-weight:700;color:var(--yellow);font-size:clamp(18px,3.4vw,28px);letter-spacing:.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    text-shadow:
+      1px 1px 0 #8a6d00, 2px 2px 0 #8a6d00,
+      3px 3px 0 #5c4200, 4px 4px 0 #5c4200,
+      5px 6px 8px rgba(0,0,0,.6);
+  }
+  .version-tag{color:var(--aqua);font-size:14px;opacity:.85;white-space:nowrap;flex-shrink:0;}
+  .status-badge{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .avatar-stack{display:flex;}
+  .avatar-stack img{
+    width:30px;height:30px;border-radius:4px;border:2px solid var(--border-darker);
+    margin-left:-9px;background:var(--slot-dark);object-fit:cover;
+    box-shadow:0 0 0 1px rgba(255,255,255,.15);
+  }
+  .avatar-stack img:first-child{margin-left:0;}
+  .online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);flex-shrink:0;}
+  .online-text{color:var(--green);font-size:15px;white-space:nowrap;flex-shrink:0;}
+  @media (max-width:520px){
+    .version-tag,.online-text{display:none;}
+    .avatar-stack img{width:26px;height:26px;}
+  }
+
+  /* ---------- main viewport ---------- */
+  .viewport{
+    flex:1;padding-top:calc(var(--topbar-h) + 18px);padding-bottom:calc(var(--hotbar-h) + 24px);
+    padding-left:16px;padding-right:16px;
+    max-width:980px;margin:0 auto;width:100%;
+  }
+  .view{display:none;animation:fadeUp .35s ease both;}
+  .view.active{display:block;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  .bevel-panel{
+    background:var(--panel);border:3px solid var(--border-darker);
+    box-shadow:inset 2px 2px 0 var(--panel-hi), inset -2px -2px 0 var(--panel-lo), 0 6px 18px rgba(0,0,0,.45);
+    color:var(--ink);padding:18px;
+  }
+  .panel-heading{
+    font-size:26px;color:var(--ink);border-bottom:2px solid var(--border-dark);
+    padding-bottom:8px;margin:0 0 14px;display:flex;align-items:center;gap:10px;
+  }
+
+  /* ---------- home view ---------- */
+  .home-card{max-width:640px;margin:6vh auto 0;text-align:center;position:relative;}
+  .home-card h1{font-size:clamp(26px,5vw,42px);color:var(--yellow);text-shadow:3px 3px 0 rgba(0,0,0,.5);margin:0 0 6px;}
+  .home-card p{font-size:20px;color:var(--panel);margin:6px 0;}
+  .home-card .sub{color:var(--aqua);font-size:18px;}
+  .bounce-arrow{margin-top:26px;font-size:26px;color:var(--gold);animation:bob 1.4s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(8px);}}
+  .friend-row{display:flex;justify-content:center;gap:22px;margin-top:34px;flex-wrap:wrap;}
+  .friend-chip{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .friend-chip img{width:56px;height:56px;border-radius:6px;border:3px solid var(--border-darker);object-fit:cover;}
+  .friend-chip span{font-size:15px;color:var(--panel-hi);}
+
+  /* ---------- hotbar ---------- */
+  .hotbar-wrap{
+    position:fixed;bottom:14px;left:0;right:0;display:flex;justify-content:center;z-index:40;
+    pointer-events:none;
+  }
+  .hotbar{
+    pointer-events:all;
+    display:flex;gap:6px;background:rgba(20,20,20,.75);
+    border:3px solid var(--border-darker);padding:6px;border-radius:6px;
+    box-shadow:0 8px 24px rgba(0,0,0,.6);
+    backdrop-filter:blur(2px);
+  }
+  .slot{
+    position:relative;width:clamp(52px,15vw,72px);height:clamp(52px,15vw,72px);
+    background:var(--slot);border:3px solid var(--border-darker);
+    box-shadow:inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -2px 0 rgba(0,0,0,.4);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .12s ease, box-shadow .12s ease;
+    padding:0;
+  }
+  .slot img{width:76%;height:76%;object-fit:cover;border-radius:2px;}
+  .slot .num{position:absolute;top:2px;left:4px;font-size:13px;color:#ddd;text-shadow:1px 1px 0 #000;}
+  .slot:hover{transform:translateY(-4px);}
+  .slot:active{transform:translateY(0) scale(.94);}
+  .slot.active{
+    border-color:var(--panel-hi);
+    box-shadow:0 0 0 2px var(--yellow), 0 0 14px 2px rgba(255,255,85,.7), inset 2px 2px 0 rgba(255,255,255,.35);
+  }
+
+  /* ---------- buttons ---------- */
+  .mc-btn{
+    background:var(--panel);border:3px solid var(--border-darker);
+    box-shadow:inset 2px 2px 0 var(--panel-hi), inset -2px -2px 0 var(--panel-lo);
+    color:var(--ink);font-size:18px;padding:9px 18px;font-family:inherit;
+    transition:transform .08s ease;
+  }
+  .mc-btn:hover{background:#d4d4d4;}
+  .mc-btn:active{transform:scale(.96);box-shadow:inset -2px -2px 0 var(--panel-hi), inset 2px 2px 0 var(--panel-lo);}
+  .mc-btn.primary{background:var(--green);color:#093c09;}
+  .mc-btn.primary:hover{background:#6bff6b;}
+  .mc-btn.danger{background:#c66;}
+  .mc-btn:disabled{opacity:.5;cursor:default;}
+
+  /* ---------- inbox ---------- */
+  .inbox-grid{display:grid;grid-template-columns:220px 1fr;gap:14px;}
+  @media (max-width:640px){.inbox-grid{grid-template-columns:1fr;}}
+  .sender-list{display:flex;flex-direction:column;gap:8px;}
+  .sender-btn{
+    display:flex;align-items:center;gap:10px;background:var(--slot);border:3px solid var(--border-darker);
+    padding:8px;text-align:left;box-shadow:inset 2px 2px 0 rgba(255,255,255,.25);
+  }
+  .sender-btn img{width:34px;height:34px;border-radius:4px;object-fit:cover;border:2px solid var(--border-darker);}
+  .sender-btn .meta{display:flex;flex-direction:column;line-height:1.15;}
+  .sender-btn .meta b{font-size:16px;color:#fff;}
+  .sender-btn .meta small{font-size:12px;color:var(--aqua);}
+  .sender-btn.active{background:var(--gold);box-shadow:0 0 0 2px var(--border-darker), 0 0 10px rgba(255,170,0,.6);}
+  .sender-btn.active .meta b{color:#3a2500;}
+  .letter-pane{background:#ded9c8;border:3px solid var(--border-darker);padding:16px;min-height:340px;color:#2a2410;position:relative;}
+  .letter-head{border-bottom:2px dashed #9c936f;padding-bottom:8px;margin-bottom:12px;font-size:15px;line-height:1.5;}
+  .letter-head b{color:#5b3a00;}
+  .letter-subject{font-size:20px;color:#5b3a00;margin:6px 0 0;}
+  .letter-body{white-space:pre-wrap;font-size:17px;line-height:1.5;}
+  .letter-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+  .letter-edit-area{
+    width:100%;min-height:260px;font-family:inherit;font-size:17px;line-height:1.5;
+    background:#f4efe0;border:2px solid #9c936f;padding:10px;color:#2a2410;resize:vertical;
+  }
+
+  /* ---------- kit / chest ---------- */
+  .kit-stage{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .chest-frame{width:min(260px,70vw);aspect-ratio:640/1138;cursor:pointer;position:relative;filter:drop-shadow(0 10px 16px rgba(0,0,0,.5));display:flex;align-items:center;justify-content:center;}
+  .chest-frame img{width:100%;height:100%;object-fit:contain;display:block;transition:transform .12s ease;}
+  .chest-frame:hover img{transform:scale(1.03);}
+  .chest-hint{color:var(--gold);font-size:16px;}
+  .inv-grid{
+    display:grid;grid-template-columns:repeat(9, minmax(0,1fr));gap:5px;
+    background:var(--panel);border:3px solid var(--border-darker);padding:10px;
+    box-shadow:inset 2px 2px 0 var(--panel-hi), inset -2px -2px 0 var(--panel-lo);
+    width:100%;max-width:620px;
+  }
+  .inv-slot{
+    aspect-ratio:1/1;background:var(--slot);border:2px solid var(--border-darker);
+    box-shadow:inset 2px 2px 0 rgba(255,255,255,.25), inset -2px -2px 0 rgba(0,0,0,.35);
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .inv-slot img{width:82%;height:82%;object-fit:cover;}
+  .inv-slot.filled{cursor:pointer;}
+  .inv-slot.filled:hover{background:#9a9a9a;}
+  .inv-slot.selected{box-shadow:0 0 0 2px var(--purple), 0 0 8px var(--purple);}
+  .tooltip-box{
+    width:100%;max-width:620px;min-height:88px;background:linear-gradient(135deg,#2b0f42,#1a0a28);
+    border:3px solid var(--purple);border-radius:3px;padding:12px 16px;
+    box-shadow:0 0 16px 2px rgba(163,67,224,.55), inset 0 0 12px rgba(163,67,224,.25);
+    animation:enchantPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes enchantPulse{0%,100%{box-shadow:0 0 12px 1px rgba(163,67,224,.4), inset 0 0 10px rgba(163,67,224,.2);}50%{box-shadow:0 0 22px 4px rgba(163,67,224,.75), inset 0 0 14px rgba(163,67,224,.35);}}
+  .tooltip-box .t-name{font-size:20px;color:var(--purple);text-shadow:0 0 6px rgba(163,67,224,.8);margin:0 0 6px;}
+  .tooltip-box .t-lore{font-size:16px;color:#d8c9e8;margin:0;line-height:1.4;white-space:pre-wrap;}
+  .tooltip-box .t-empty{color:#8f7ba3;font-size:16px;}
+
+  /* ---------- memories gallery ---------- */
+  .gallery-hint{color:var(--panel-lo);font-size:15px;margin:-4px 0 14px;}
+  .gallery-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;
+    max-height:min(62vh,560px);overflow-y:auto;padding:6px 4px 10px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .gallery-empty-note{color:#8a8a8a;font-size:15px;text-align:center;padding:20px;grid-column:1/-1;}
+  .gallery-frame{display:flex;flex-direction:column;align-items:stretch;gap:6px;}
+  .gallery-frame.empty{display:none;}
+  body.edit-mode .gallery-frame.empty{display:flex;}
+  .frame-window{
+    position:relative;width:100%;aspect-ratio:1/1;padding:9px;
+    background:linear-gradient(145deg,#8a5a2b,#5b3a19 60%,#3d2610);
+    border:4px solid #2a1608;box-shadow:0 8px 16px rgba(0,0,0,.5), inset 0 0 0 3px rgba(0,0,0,.25);
+  }
+  .frame-window .inner{
+    width:100%;height:100%;background:#0f0f0f;border:3px solid var(--border-darker);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;
+  }
+  .frame-window .inner img{width:100%;height:100%;object-fit:cover;display:block;}
+  .frame-window .inner.clickable{cursor:pointer;}
+  .frame-empty-label{color:#7a7a7a;font-size:13px;text-align:center;padding:8px;}
+  .frame-remove{
+    position:absolute;top:4px;right:4px;width:22px;height:22px;min-width:0;padding:0;
+    background:var(--red);color:#3a0000;border:2px solid var(--border-darker);font-size:14px;line-height:1;
+    border-radius:2px;align-items:center;justify-content:center;
+  }
+  .frame-caption-view{
+    display:block;text-align:center;font-size:14px;color:var(--panel-hi);min-height:18px;
+    overflow-wrap:break-word;
+  }
+  .frame-caption-view:empty::before{content:'\2014';color:#6a6a6a;}
+  .frame-caption-input{
+    width:100%;font-family:inherit;font-size:14px;text-align:center;
+    background:#f4efe0;border:2px solid #9c936f;color:#2a2410;padding:5px 6px;
+  }
+  .frame-upload-btn{width:100%;font-size:14px;padding:7px 10px;}
+  @media (max-width:520px){
+    .gallery-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;max-height:56vh;}
+  }
+
+  /* ---------- achievement ---------- */
+  .ach-toast{
+    display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,#2b2b2b,#1c1c1c);
+    border:2px solid var(--gold);padding:12px 16px;margin-bottom:18px;
+    box-shadow:0 0 16px rgba(255,170,0,.35);
+    transform:translateX(120%);opacity:0;
+  }
+  .ach-toast.show{animation:toastIn .6s cubic-bezier(.2,.8,.2,1) forwards;}
+  @keyframes toastIn{0%{transform:translateX(120%);opacity:0;}60%{transform:translateX(-6px);opacity:1;}100%{transform:translateX(0);opacity:1;}}
+  .ach-icon{width:42px;height:42px;object-fit:cover;border:2px solid var(--gold);flex-shrink:0;}
+  .ach-text b{display:block;color:var(--gold);font-size:14px;letter-spacing:.5px;}
+  .ach-text span{display:block;color:#fff;font-size:19px;}
+  .letter-body.goodluck{color:var(--ink);}
+  .goodluck-wrap{background:#ded9c8;border:3px solid var(--border-darker);padding:16px;color:#2a2410;}
+
+  /* ---------- fireworks canvas + modal ---------- */
+  #fxCanvas{position:fixed;inset:0;z-index:80;pointer-events:none;display:none;}
+  .modal-backdrop{
+    position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.55);
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-backdrop.show{display:flex;}
+  .enchant-modal{
+    background:linear-gradient(160deg,#241238,#170a24);border:3px solid var(--purple);
+    box-shadow:0 0 30px 6px rgba(163,67,224,.65), inset 0 0 20px rgba(163,67,224,.25);
+    max-width:420px;width:100%;padding:26px 22px;text-align:center;color:#f0e6fb;
+    animation:modalPop .35s ease both;
+  }
+  @keyframes modalPop{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .enchant-modal h2{color:var(--yellow);font-size:26px;margin:0 0 12px;text-shadow:0 0 8px rgba(255,255,85,.6);}
+  .enchant-modal p{font-size:19px;line-height:1.4;margin:0 0 18px;}
+
+  .toolbar-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  footer.credit{text-align:center;color:#666;font-size:13px;padding:18px 0 4px;}
+
+  /* ---------- creator/viewer mode ---------- */
+  .edit-only{display:none !important;}
+  body.edit-mode .edit-only{display:inline-flex !important;}
+  body.edit-mode input.edit-only,
+  body.edit-mode textarea.edit-only{display:block !important;}
+  body.edit-mode .view-only{display:none !important;}
+  .creator-badge{
+    display:none;position:fixed;top:calc(var(--topbar-h) + 8px);right:10px;z-index:41;
+    background:var(--purple-deep);color:#f0e6fb;font-size:12px;padding:4px 9px;
+    border:2px solid var(--purple);border-radius:3px;letter-spacing:.5px;
+  }
+  body.edit-mode .creator-badge{display:block;}
+</style>
+</head>
+<body>
+
+<div class="bedrock-bg"></div>
+<div class="grain-overlay"></div>
+<div id="fireflies"></div>
+
+<canvas id="fxCanvas"></canvas>
+
+<div class="modal-backdrop" id="congratsModal">
+  <div class="enchant-modal">
+    <h2>Level Up!</h2>
+    <p>&#127881; Congratulations Syarap got accepted!</p>
+    <button class="mc-btn primary" id="closeModalBtn">Continue &raquo;</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="realm-title-wrap">
+      <button class="realm-title-btn" id="homeLinkBtn" title="Back to spawn" aria-label="Back to home">
+        <span class="realm-title">Syarap's Farewell Realm</span>
+      </button>
+      <span class="version-tag">v1.21.0</span>
+    </div>
+    <div class="status-badge">
+      <span class="online-dot"></span>
+      <span class="online-text">3 Online</span>
+      <div class="avatar-stack">
+        <img src="avatar-owadera66.jpg" alt="owadera66 avatar" title="owadera66">
+        <img src="avatar-syarap.jpg" alt="Syarap avatar" title="Syarap">
+        <img src="avatar-rainnybaby.jpg" alt="rainnybaby avatar" title="rainnybaby">
+      </div>
+    </div>
+  </div>
+
+  <div class="creator-badge">&#9998; Creator Mode</div>
+
+  <div class="viewport">
+
+    <section class="view active" id="view-home">
+      <div class="home-card">
+        <h1>Welcome back, rapgallagher</h1>
+        <p>This realm was built by your friends as a send-off before your next adventure.</p>
+        <p class="sub">&#9660; Choose an item from your hotbar to begin &#9660;</p>
+        <div class="bounce-arrow">&#8595;</div>
+        <div class="friend-row">
+          <div class="friend-chip"><img src="avatar-owadera66.jpg" alt="owadera66 avatar"><span>owadera66</span></div>
+          <div class="friend-chip"><img src="avatar-syarap.jpg" alt="Syarap avatar"><span>Syarap</span></div>
+          <div class="friend-chip"><img src="avatar-rainnybaby.jpg" alt="rainnybaby avatar"><span>rainnybaby</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-inbox">
+      <div class="bevel-panel">
+        <h2 class="panel-heading">&#128236; Inbox</h2>
+        <div class="inbox-grid">
+          <div class="sender-list" id="senderList"></div>
+          <div class="letter-pane" id="letterPane"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-kit">
+      <div class="bevel-panel">
+        <h2 class="panel-heading">&#129520; Uni Survival Kit</h2>
+        <div class="kit-stage">
+          <div class="chest-frame" id="chestFrame">
+            <img id="chestImg" src="chest-closed.jpg" alt="Minecraft chest, closed">
+          </div>
+          <p class="chest-hint" id="chestHint">Tap the chest to open it</p>
+          <div id="invWrap" style="display:none;width:100%;flex-direction:column;align-items:center;gap:12px;">
+            <div class="inv-grid" id="invGrid"></div>
+            <div class="tooltip-box" id="tooltipBox"><p class="t-empty">Select an item to inspect it&hellip;</p></div>
+            <button class="mc-btn danger" id="closeChestBtn">Close Chest</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-memories">
+      <div class="bevel-panel">
+        <h2 class="panel-heading">&#128247; Memories / Spawn Point</h2>
+        <p class="gallery-hint">A gallery of memories from the realm &mdash; up to 10 pictures.</p>
+        <div class="gallery-grid" id="galleryGrid"></div>
+        <input type="file" id="galleryInput" accept="image/*" style="display:none;">
+      </div>
+    </section>
+
+    <section class="view" id="view-achievement">
+      <div class="bevel-panel">
+        <h2 class="panel-heading">&#127942; Good Luck</h2>
+        <div class="ach-toast" id="achToast">
+          <img class="ach-icon" src="icon-achievement.jpg" alt="Achievement icon">
+          <div class="ach-text">
+            <b>ACHIEVEMENT UNLOCKED</b>
+            <span>Next Realm!</span>
+          </div>
+        </div>
+        <div class="goodluck-wrap">
+          <div class="letter-head"><b>To:</b> Syarap</div>
+          <div class="letter-body goodluck">Congratulations on getting accepted to University!
+
+As you step into this new adventure, remember that our realm and server are always open, and you are always welcome back home whenever you need a base. Equip your Uni Survival Kit, stack up your XP, and keep building your dream future block by block!
+
+Good luck, Syarap! May your inventory always be full and your torch never burn out.</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="hotbar-wrap">
+    <div class="hotbar" id="hotbar">
+      <button class="slot" data-slot="firework" title="Fireworks"><span class="num">1</span><img src="icon-firework.jpg" alt="Firework rocket icon"></button>
+      <button class="slot" data-slot="inbox" title="Inbox"><span class="num">2</span><img src="icon-inbox.jpg" alt="Inbox icon"></button>
+      <button class="slot" data-slot="kit" title="Uni Survival Kit"><span class="num">3</span><img src="icon-chest.jpg" alt="Chest icon"></button>
+      <button class="slot" data-slot="memories" title="Memories"><span class="num">4</span><img src="icon-camera.jpg" alt="Camera icon"></button>
+      <button class="slot" data-slot="achievement" title="Good Luck"><span class="num">5</span><img src="icon-achievement.jpg" alt="Achievement icon"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= Creator/viewer mode ================= */
+  var EDIT_KEY = 'syarap-edit-mode';
+  function isEditMode(){
+    try{ return localStorage.getItem(EDIT_KEY) === '1'; }catch(e){ return false; }
+  }
+  function setEditMode(on){
+    document.body.classList.toggle('edit-mode', on);
+    try{ localStorage.setItem(EDIT_KEY, on ? '1' : '0'); }catch(e){}
+  }
+  (function initEditMode(){
+    var params = new URLSearchParams(window.location.search);
+    if(params.get('edit') === 'true'){ setEditMode(true); }
+    else{ setEditMode(isEditMode()); }
+  })();
+  document.addEventListener('keydown', function(e){
+    if(e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')){
+      e.preventDefault();
+      setEditMode(!isEditMode());
+    }
+  });
+
+  /* ================= Audio Engine ================= */
+  var AudioEngine = (function(){
+    var ctx = null;
+    function getCtx(){
+      if(!ctx){ ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      if(ctx.state === 'suspended'){ ctx.resume(); }
+      return ctx;
+    }
+    function tone(freq, dur, type, gainVal, delay){
+      var c = getCtx();
+      var osc = c.createOscillator();
+      var gain = c.createGain();
+      osc.type = type || 'square';
+      osc.frequency.value = freq;
+      var t0 = c.currentTime + (delay || 0);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(gainVal || 0.12, t0 + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    }
+    function noiseBurst(dur, gainVal, delay){
+      var c = getCtx();
+      var bufferSize = c.sampleRate * dur;
+      var buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+      var data = buffer.getChannelData(0);
+      for(var i=0;i<bufferSize;i++){ data[i] = (Math.random()*2-1) * (1 - i/bufferSize); }
+      var noise = c.createBufferSource();
+      noise.buffer = buffer;
+      var gain = c.createGain();
+      var t0 = c.currentTime + (delay || 0);
+      gain.gain.setValueAtTime(gainVal || 0.15, t0);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      noise.connect(gain);
+      gain.connect(c.destination);
+      noise.start(t0);
+    }
+    return {
+      click: function(){ tone(660, 0.06, 'square', 0.08); },
+      chestOpen: function(){
+        tone(140, 0.18, 'sawtooth', 0.12);
+        tone(90, 0.28, 'sawtooth', 0.10, 0.08);
+        noiseBurst(0.3, 0.05, 0.02);
+      },
+      chestClose: function(){
+        tone(180, 0.14, 'sawtooth', 0.10);
+        tone(110, 0.2, 'sawtooth', 0.09, 0.05);
+      },
+      levelUp: function(){
+        [523,659,784,1046].forEach(function(f,i){ tone(f, 0.22, 'square', 0.10, i*0.09); });
+      },
+      fireworkLaunch: function(delay){ noiseBurst(0.25, 0.06, delay || 0); },
+      fireworkBurst: function(delay){
+        tone(220 + Math.random()*140, 0.3, 'triangle', 0.09, delay || 0);
+        noiseBurst(0.4, 0.10, delay || 0);
+      }
+    };
+  })();
+
+  /* ================= Fireflies ambience ================= */
+  var flyHost = document.getElementById('fireflies');
+  for(var i=0;i<16;i++){
+    var f = document.createElement('div');
+    f.className = 'firefly';
+    f.style.left = (Math.random()*100)+'vw';
+    f.style.top = (Math.random()*100)+'vh';
+    f.style.setProperty('--dx', (Math.random()*80-40)+'px');
+    f.style.setProperty('--dy', (Math.random()*80-40)+'px');
+    f.style.animationDuration = (6+Math.random()*8)+'s';
+    f.style.animationDelay = (Math.random()*6)+'s';
+    flyHost.appendChild(f);
+  }
+
+  /* ================= View switching ================= */
+  var views = document.querySelectorAll('.view');
+  var slots = document.querySelectorAll('.slot');
+
+  function setView(name){
+    views.forEach(function(v){ v.classList.toggle('active', v.id === 'view-'+name); });
+    slots.forEach(function(s){ s.classList.toggle('active', s.dataset.slot === name); });
+    if(name === 'achievement'){ triggerAchievementToast(); }
+  }
+
+  slots.forEach(function(s){
+    s.addEventListener('click', function(){
+      AudioEngine.click();
+      var which = s.dataset.slot;
+      if(which === 'firework'){
+        launchFireworks();
+        return;
+      }
+      setView(which);
+    });
+  });
+
+  document.getElementById('homeLinkBtn').addEventListener('click', function(){
+    AudioEngine.click();
+    setView('home');
+  });
+
+  function triggerAchievementToast(){
+    var toast = document.getElementById('achToast');
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+    AudioEngine.levelUp();
+  }
+
+  /* ================= Fireworks + congrats modal ================= */
+  var canvas = document.getElementById('fxCanvas');
+  var fxCtx = canvas.getContext('2d');
+  var fxParticles = [];
+  var fxRunning = false;
+  var fxSpawnTimer = null;
+  var fxRafId = null;
+
+  function resizeCanvas(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  var FX_COLORS = ['#ff5555','#ffaa00','#ffff55','#55ff55','#55ffff','#aa66ff','#ff77cc'];
+
+  function spawnRocket(){
+    var x = 60 + Math.random() * (canvas.width - 120);
+    var targetY = canvas.height * (0.18 + Math.random()*0.35);
+    AudioEngine.fireworkLaunch();
+    fxParticles.push({
+      type:'rocket', x:x, y:canvas.height + 10, vy:-(9+Math.random()*3),
+      targetY:targetY, color: FX_COLORS[Math.floor(Math.random()*FX_COLORS.length)]
+    });
+  }
+
+  function explode(x,y,color){
+    AudioEngine.fireworkBurst();
+    var count = 26 + Math.floor(Math.random()*14);
+    for(var i=0;i<count;i++){
+      var angle = (Math.PI*2) * (i/count) + Math.random()*0.3;
+      var speed = 2 + Math.random()*4.5;
+      fxParticles.push({
+        type:'spark', x:x, y:y,
+        vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
+        life: 1, decay: 0.012 + Math.random()*0.014,
+        color: Math.random() < 0.25 ? '#ffffff' : color,
+        size: 2 + Math.random()*2
+      });
+    }
+  }
+
+  function fxTick(){
+    fxCtx.clearRect(0,0,canvas.width, canvas.height);
+    for(var i=fxParticles.length-1;i>=0;i--){
+      var p = fxParticles[i];
+      if(p.type === 'rocket'){
+        p.y += p.vy;
+        fxCtx.fillStyle = p.color;
+        fxCtx.fillRect(p.x-2, p.y-6, 4, 10);
+        if(p.y <= p.targetY){
+          explode(p.x, p.y, p.color);
+          fxParticles.splice(i,1);
+        }
+      } else {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.06;
+        p.life -= p.decay;
+        if(p.life <= 0){ fxParticles.splice(i,1); continue; }
+        fxCtx.globalAlpha = Math.max(p.life,0);
+        fxCtx.fillStyle = p.color;
+        fxCtx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+        fxCtx.globalAlpha = 1;
+      }
+    }
+    if(fxRunning || fxParticles.length){
+      fxRafId = requestAnimationFrame(fxTick);
+    } else {
+      canvas.style.display = 'none';
+    }
+  }
+
+  function launchFireworks(){
+    canvas.style.display = 'block';
+    fxRunning = true;
+    openModal();
+    var bursts = 0;
+    spawnRocket();
+    fxSpawnTimer = setInterval(function(){
+      spawnRocket();
+      bursts++;
+      if(bursts >= 9){
+        clearInterval(fxSpawnTimer);
+        fxRunning = false;
+      }
+    }, 420);
+    if(!fxRafId){ fxTick(); }
+  }
+
+  var modal = document.getElementById('congratsModal');
+  function openModal(){ modal.classList.add('show'); }
+  function closeModal(){ modal.classList.remove('show'); }
+  document.getElementById('closeModalBtn').addEventListener('click', function(){
+    AudioEngine.click();
+    closeModal();
+  });
+  modal.addEventListener('click', function(e){ if(e.target === modal){ closeModal(); } });
+
+  /* ================= Inbox module ================= */
+  var LETTERS = [
+    {
+      id:'owadera66',
+      name:'owadera66',
+      avatar:'avatar-owadera66.jpg',
+      subject:'Shared Realms & Memories',
+      to:'Syarap (rapgallagher)',
+      body:"It’s hard to believe we’re wrapping up this chapter! Tak sangka you have grown so big, from just a small silly kid kat skatepark 13. I only got to know you sebab Fatu and our friends, but then it turned into daily lepak kat skateshop, random food hunts, concerts together, and those late-night drives.\n\nI actually saw you growing up right in front of my eyes—from watching you skate while I was just there tagging along, to seeing you turn into such a mature and cool young lady. I'm so proud of you, Rap. You are so brave, tough, and the most genuine person I know.\n\nI’m so grateful for those days when you were simply just there for us. Little did you know, you offered me so much comfort when I was going through some dark times. Thank you for all the deep talks, listening to our rants, the endless laughs, and for always keeping the energy high in every moment.\n\nIt’s time for you to be the adult for yourself now. Lepas ni Syarap dah ada own stuff, future career, and new adventures to explore. I hope life treats you gently. Kita doa Syarap dapat capai apa Syarap nak and always be happy.\n\nShah Alam will always remind me of you—the coolest skater girl I know. Terbang tinggi-tinggi tau! Remember that our realm and server are always open, and you are always welcome back whenever you need a home. I will always support you in any decision you make.\n\nThank you for being you, Syarap.\n\nLove,\nAdhwa"
+    },
+    {
+      id:'rainnybaby',
+      name:'rainnybaby',
+      avatar:'avatar-rainnybaby.jpg',
+      subject:'Safe Travels & Good Luck!',
+      to:'Syarap (rapgallagher)',
+      body:"So excited and proud of you for taking this huge step into university! You’ve always been such a bright, resilient, and fun energy to be around. Thank you for all the hilarious memories, food hunts, and good times.\n\nHave an amazing journey ahead—you're going to crush it! Can't wait for our next catch-up session when you're back in town.\n\nLove,\nrainnybaby"
+    }
+  ];
+  var editedLetters = {};
+  try{
+    var stored = localStorage.getItem('syarap-letters');
+    if(stored){ editedLetters = JSON.parse(stored); }
+  }catch(e){}
+
+  var activeLetterId = LETTERS[0].id;
+  var editing = false;
+
+  function renderSenderList(){
+    var host = document.getElementById('senderList');
+    host.innerHTML = '';
+    LETTERS.forEach(function(letter){
+      var btn = document.createElement('button');
+      btn.className = 'sender-btn' + (letter.id === activeLetterId ? ' active' : '');
+      btn.innerHTML = '<img src="'+letter.avatar+'" alt="'+letter.name+' avatar">' +
+        '<span class="meta"><b>'+letter.name+'</b><small>From: '+letter.name+'</small></span>';
+      btn.addEventListener('click', function(){
+        AudioEngine.click();
+        activeLetterId = letter.id;
+        editing = false;
+        renderSenderList();
+        renderLetterPane();
+      });
+      host.appendChild(btn);
+    });
+  }
+
+  function currentLetter(){
+    return LETTERS.find(function(l){ return l.id === activeLetterId; });
+  }
+  function currentBody(letter){
+    return editedLetters[letter.id] !== undefined ? editedLetters[letter.id] : letter.body;
+  }
+
+  function renderLetterPane(){
+    var letter = currentLetter();
+    var pane = document.getElementById('letterPane');
+    if(editing){
+      pane.innerHTML =
+        '<div class="letter-head"><b>From:</b> '+letter.name+'<br><b>To:</b> '+letter.to+'</div>' +
+        '<div class="letter-subject">Subject: '+letter.subject+'</div>' +
+        '<textarea class="letter-edit-area" id="editArea" style="margin-top:12px;"></textarea>' +
+        '<div class="letter-actions">' +
+          '<button class="mc-btn" id="cancelEditBtn">Cancel</button>' +
+          '<button class="mc-btn primary" id="saveEditBtn">Save Letter</button>' +
+        '</div>';
+      document.getElementById('editArea').value = currentBody(letter);
+      document.getElementById('cancelEditBtn').addEventListener('click', function(){
+        AudioEngine.click();
+        editing = false;
+        renderLetterPane();
+      });
+      document.getElementById('saveEditBtn').addEventListener('click', function(){
+        AudioEngine.click();
+        editedLetters[letter.id] = document.getElementById('editArea').value;
+        try{ localStorage.setItem('syarap-letters', JSON.stringify(editedLetters)); }catch(e){}
+        editing = false;
+        renderLetterPane();
+      });
+    } else {
+      pane.innerHTML =
+        '<div class="letter-head"><b>From:</b> '+letter.name+'<br><b>To:</b> '+letter.to+'</div>' +
+        '<div class="letter-subject">Subject: '+letter.subject+'</div>' +
+        '<div class="letter-body" style="margin-top:12px;"></div>' +
+        '<div class="letter-actions"><button class="mc-btn edit-only" id="editLetterBtn">Edit Letter</button></div>';
+      pane.querySelector('.letter-body').textContent = currentBody(letter);
+      document.getElementById('editLetterBtn').addEventListener('click', function(){
+        AudioEngine.click();
+        editing = true;
+        renderLetterPane();
+      });
+    }
+  }
+  renderSenderList();
+  renderLetterPane();
+
+  /* ================= Kit / chest module ================= */
+  var chestOpenState = false;
+  var chestFrame = document.getElementById('chestFrame');
+  var chestImg = document.getElementById('chestImg');
+  var chestHint = document.getElementById('chestHint');
+  var invWrap = document.getElementById('invWrap');
+
+  var ITEMS = [
+    {img:'item-golden-apple.jpg', name:'Enchanted Golden Apple', lore:'Absorption IV (Permanent) · Regeneration II\n\nOne bite and every stat glows gold — the perfect buff for the first week in a new city where nothing is familiar yet. Save it for the day the homesickness hits harder than expected. Eat it slow, breathe out, and remember Shah Alam respawns you the second you log back in.'},
+    {img:'item-oak-sticks.jpg', name:'64x Oak Wood & Sticks', lore:'Infinite Crafting Power\n\nEvery essay, group project, and 2am assignment is really just a crafting recipe you haven’t solved yet. This stack never runs out — break the big scary thing into small pieces, place them in order, and craft your way through. You’ve built harder things out of less.'},
+    {img:'item-water-bucket.jpg', name:'1x Water Bucket', lore:'MLG Clutch · Fire Resistance 0:30\n\nFor the nights deadlines fall like lava and the whole run feels like it’s about to end. Place it right before you panic, clutch the fall, and keep walking. You’ve survived worse drops than this one — this bucket just makes sure you land standing.'},
+    {img:'item-diamond-skateboard.jpg', name:'1x Diamond Skateboard', lore:'Unbreaking III · Feather Falling II\n\nCustom-enchanted for the coolest skater Shah Alam ever produced. Lecture halls and campus car parks are just new terrain — same board, same balance, same fearless line you always took at the skatepark. Ride it like nobody’s watching your grind.'},
+    {img:'item-totem.jpg', name:'Totem of Undying', lore:'Second Wind · Full Absorption Burst\n\nWhen your hearts hit zero — finals week, doubt, missing home — this totem pops automatically and stands you back up glowing. Consider it a permanent gift from everyone who watched you grow up: you don’t get to give up, and we made sure of it.'}
+  ];
+
+  function buildInventory(){
+    var grid = document.getElementById('invGrid');
+    grid.innerHTML = '';
+    for(var i=0;i<27;i++){
+      var slot = document.createElement('div');
+      slot.className = 'inv-slot';
+      var item = ITEMS[i];
+      if(item){
+        slot.classList.add('filled');
+        slot.innerHTML = '<img src="'+item.img+'" alt="'+item.name+'">';
+        slot.addEventListener('click', function(it, el){
+          return function(){
+            AudioEngine.click();
+            document.querySelectorAll('.inv-slot.selected').forEach(function(s){ s.classList.remove('selected'); });
+            el.classList.add('selected');
+            var tip = document.getElementById('tooltipBox');
+            tip.innerHTML = '<p class="t-name">'+it.name+'</p><p class="t-lore">'+it.lore+'</p>';
+          };
+        }(item, slot));
+      }
+      grid.appendChild(slot);
+    }
+  }
+
+  chestFrame.addEventListener('click', function(){
+    if(!chestOpenState){
+      chestOpenState = true;
+      AudioEngine.chestOpen();
+      chestImg.src = 'chest-open.jpg';
+      chestImg.alt = 'Minecraft chest, open';
+      chestHint.style.display = 'none';
+      invWrap.style.display = 'flex';
+      if(!invWrap.dataset.built){ buildInventory(); invWrap.dataset.built = '1'; }
+    }
+  });
+
+  document.getElementById('closeChestBtn').addEventListener('click', function(){
+    AudioEngine.chestClose();
+    chestOpenState = false;
+    chestImg.src = 'chest-closed.jpg';
+    chestImg.alt = 'Minecraft chest, closed';
+    chestHint.style.display = 'block';
+    invWrap.style.display = 'none';
+  });
+
+  /* ================= Memories gallery module ================= */
+  var GALLERY_KEY = 'syarap-memories';
+  var GALLERY_SIZE = 10;
+  var galleryInput = document.getElementById('galleryInput');
+  var galleryGrid = document.getElementById('galleryGrid');
+  var uploadTargetIndex = -1;
+
+  function loadMemories(){
+    var arr = [];
+    try{
+      var stored = JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]');
+      if(Array.isArray(stored)){ arr = stored; }
+    }catch(e){}
+    while(arr.length < GALLERY_SIZE){ arr.push(null); }
+    return arr.slice(0, GALLERY_SIZE);
+  }
+  var MEMORIES = loadMemories();
+
+  function saveMemories(){
+    try{
+      localStorage.setItem(GALLERY_KEY, JSON.stringify(MEMORIES));
+      return true;
+    }catch(e){ return false; }
+  }
+
+  function resizeImageForStorage(file, cb){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        var maxDim = 900;
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        var c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        cb(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function renderGallery(){
+    galleryGrid.innerHTML = '';
+    var hasAny = MEMORIES.some(function(m){ return m && m.img; });
+    if(!hasAny){
+      var note = document.createElement('p');
+      note.className = 'gallery-empty-note edit-only';
+      note.textContent = 'No frames placed yet — add a photo below.';
+      galleryGrid.appendChild(note);
+      var noteView = document.createElement('p');
+      noteView.className = 'gallery-empty-note view-only';
+      noteView.textContent = 'No memories placed yet.';
+      galleryGrid.appendChild(noteView);
+    }
+    MEMORIES.forEach(function(mem, i){
+      var filled = !!(mem && mem.img);
+      var frame = document.createElement('div');
+      frame.className = 'gallery-frame' + (filled ? '' : ' empty');
+
+      var win = document.createElement('div');
+      win.className = 'frame-window';
+      var inner = document.createElement('div');
+      inner.className = 'inner' + (filled ? ' clickable edit-only' : ' clickable edit-only');
+      if(filled){
+        var img = document.createElement('img');
+        img.src = mem.img;
+        img.alt = (mem.caption && mem.caption.trim()) ? mem.caption : 'Memory photo';
+        inner.appendChild(img);
+        var rm = document.createElement('button');
+        rm.className = 'frame-remove edit-only';
+        rm.title = 'Remove photo';
+        rm.textContent = '×';
+        rm.addEventListener('click', function(ev){
+          ev.stopPropagation();
+          AudioEngine.click();
+          MEMORIES[i] = null;
+          saveMemories();
+          renderGallery();
+        });
+        win.appendChild(rm);
+      } else {
+        var label = document.createElement('span');
+        label.className = 'frame-empty-label';
+        label.textContent = 'Empty Frame';
+        inner.appendChild(label);
+      }
+      inner.addEventListener('click', function(){
+        AudioEngine.click();
+        uploadTargetIndex = i;
+        galleryInput.click();
+      });
+      win.appendChild(inner);
+      frame.appendChild(win);
+
+      var captionView = document.createElement('span');
+      captionView.className = 'frame-caption-view';
+      captionView.textContent = (mem && mem.caption) ? mem.caption : '';
+      frame.appendChild(captionView);
+
+      var captionInput = document.createElement('input');
+      captionInput.type = 'text';
+      captionInput.className = 'frame-caption-input edit-only';
+      captionInput.maxLength = 60;
+      captionInput.placeholder = 'Add a caption…';
+      captionInput.value = (mem && mem.caption) ? mem.caption : '';
+      captionInput.addEventListener('input', function(){
+        if(!MEMORIES[i]) return;
+        MEMORIES[i].caption = captionInput.value;
+        captionView.textContent = captionInput.value;
+      });
+      captionInput.addEventListener('change', function(){ saveMemories(); });
+      if(filled){ frame.appendChild(captionInput); }
+
+      if(!filled){
+        var uploadBtn = document.createElement('button');
+        uploadBtn.className = 'mc-btn frame-upload-btn edit-only';
+        uploadBtn.textContent = 'Upload Photo';
+        uploadBtn.addEventListener('click', function(){
+          AudioEngine.click();
+          uploadTargetIndex = i;
+          galleryInput.click();
+        });
+        frame.appendChild(uploadBtn);
+      }
+
+      galleryGrid.appendChild(frame);
+    });
+  }
+
+  galleryInput.addEventListener('change', function(e){
+    var file = e.target.files[0];
+    galleryInput.value = '';
+    if(!file || uploadTargetIndex < 0) return;
+    resizeImageForStorage(file, function(dataUrl){
+      MEMORIES[uploadTargetIndex] = {img: dataUrl, caption: (MEMORIES[uploadTargetIndex] && MEMORIES[uploadTargetIndex].caption) || ''};
+      AudioEngine.click();
+      if(!saveMemories()){
+        MEMORIES[uploadTargetIndex] = null;
+        alert('Storage is full — remove a photo before adding another.');
+      }
+      renderGallery();
+    });
+  });
+
+  renderGallery();
+
+  /* ================= Keyboard shortcuts ================= */
+  document.addEventListener('keydown', function(e){
+    var map = {'1':'firework','2':'inbox','3':'kit','4':'memories','5':'achievement'};
+    if(map[e.key]){
+      if(map[e.key] === 'firework'){ AudioEngine.click(); launchFireworks(); }
+      else { AudioEngine.click(); setView(map[e.key]); }
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
