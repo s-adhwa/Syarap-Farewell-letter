@@ -920,7 +920,7 @@ Good luck, Syarap! May your inventory always be full and your torch never burn o
       var win = document.createElement('div');
       win.className = 'frame-window';
       var inner = document.createElement('div');
-      inner.className = 'inner' + (filled ? ' clickable edit-only' : ' clickable edit-only');
+      inner.className = 'inner' + (filled ? '' : ' clickable edit-only');
       if(filled){
         var img = document.createElement('img');
         img.src = mem.img;
