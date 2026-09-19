@@ -856,31 +856,34 @@
     invWrap.style.display = 'none';
   });
 
-  /* ================= Memories gallery module ================= */
-  var GALLERY_KEY = 'syarap-memories';
+ /* ================= Memories gallery module ================= */
   var GALLERY_SIZE = 10;
   var galleryInput = document.getElementById('galleryInput');
   var galleryGrid = document.getElementById('galleryGrid');
   var uploadTargetIndex = -1;
 
+  var MEMORIES = [
+    { img: 'photo1.jpeg', caption: 'We love Syarap and Green Day' },
+    { img: 'photo2.jpeg', caption: "thank you rap selalu teman gi toilet :')" },
+    { img: 'photo3.jpeg', caption: 'lepasni Convo Syarap pulak yay!' },
+    { img: 'photo4.jpeg', caption: 'try semua benda dengan carap ^_^' },
+    { img: 'photo5.jpeg', caption: 'our first big concert together <3' },
+    { img: 'photo6.jpeg', caption: 'kita gi tengok monyet' },
+    { img: 'photo7.jpeg', caption: 'impromptu events on random weekends' },
+    { img: 'photo8.jpeg', caption: '' },
+    { img: 'photo9.jpeg', caption: '' },
+    { img: 'photo10.jpeg', caption: '' }
+  ];
+
   function loadMemories(){
-    var arr = [];
-    try{
-      var stored = JSON.parse(localStorage.getItem(GALLERY_KEY) || '[]');
-      if(Array.isArray(stored)){ arr = stored; }
-    }catch(e){}
-    while(arr.length < GALLERY_SIZE){ arr.push(null); }
-    return arr.slice(0, GALLERY_SIZE);
+    return MEMORIES;
   }
-  var MEMORIES = loadMemories();
 
   function saveMemories(){
-    try{
-      localStorage.setItem(GALLERY_KEY, JSON.stringify(MEMORIES));
-      return true;
-    }catch(e){ return false; }
+    // Local storage removed so everyone sees the exact same default photos
+    return true;
   }
-
+  
   function resizeImageForStorage(file, cb){
     var reader = new FileReader();
     reader.onload = function(ev){
