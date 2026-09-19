@@ -816,11 +816,36 @@ Wishing you all the best on this incredible journey, Syarap. May your inventory 
   var invWrap = document.getElementById('invWrap');
 
   var ITEMS = [
-    {img:'item-golden-apple.jpeg', name:'Enchanted Golden Apple', lore:'Absorption IV (Permanent) · Regeneration II\n\nOne bite and every stat glows gold — the perfect buff for the first week in a new city where nothing is familiar yet. Save it for the day the homesickness hits harder than expected. Eat it slow, breathe out, and remember Shah Alam respawns you the second you log back in.'},
-    {img:'item-oak-sticks.jpeg', name:'64x Oak Wood & Sticks', lore:'Infinite Crafting Power\n\nEvery essay, group project, and 2am assignment is really just a crafting recipe you haven’t solved yet. This stack never runs out — break the big scary thing into small pieces, place them in order, and craft your way through. You’ve built harder things out of less.'},
-    {img:'item-water-bucket.jpeg', name:'1x Water Bucket', lore:'MLG Clutch · Fire Resistance 0:30\n\nFor the nights deadlines fall like lava and the whole run feels like it’s about to end. Place it right before you panic, clutch the fall, and keep walking. You’ve survived worse drops than this one — this bucket just makes sure you land standing.'},
-    {img:'item-diamond-skateboard.jpeg', name:'1x Diamond Skateboard', lore:'Unbreaking III · Feather Falling II\n\nCustom-enchanted for the coolest skater Shah Alam ever produced. Lecture halls and campus car parks are just new terrain — same board, same balance, same fearless line you always took at the skatepark. Ride it like nobody’s watching your grind.'},
-    {img:'item-totem.jpeg', name:'Totem of Undying', lore:'Second Wind · Full Absorption Burst\n\nWhen your hearts hit zero — finals week, doubt, missing home — this totem pops automatically and stands you back up glowing. Consider it a permanent gift from everyone who watched you grow up: you don’t get to give up, and we made sure of it.'}
+    {
+      img: 'item-golden-apple.jpg',
+      name: 'Enchanted Golden Apple',
+      lore: 'Absorption IV · Regeneration II\n\nCrafted by combining 8 gold ingots with pure caffeine. Eat this at 3:00 AM during finals week or when homesickness hits harder than expected to instantly cure the "Sleep Deprivation" debuff and grant permanent motivation.'
+    },
+    {
+      img: 'item-oak-sticks.jpg',
+      name: '64x Oak Wood & Sticks',
+      lore: 'Infinite Crafting Power\n\nEvery presentation, group project, and 2 AM assignment is just a crafting recipe you haven’t solved yet. This full stack never runs out—break the big scary tasks into small pieces, place them in order and craft your way through. Never dig straight down and never skip lectures before exams!'
+    },
+    {
+      img: 'item-water-bucket.jpg',
+      name: '1x Water Bucket',
+      lore: 'Water Bucket Clutch! · Fall Protection · Anti-Enderman\n\nFor the nights deadlines drop like lava and the whole run feels chaotic. Hotbar-swap to this and place it on the floor right before you panic to clutch the fall, negate all emotional damage and chase scary Endermen away when they get too close. You’ve survived worse drops than this one!'
+    },
+    {
+      img: 'item-diamond-skateboard.jpg',
+      name: '1x Diamond Skateboard',
+      lore: 'Unbreaking III · Speed II · Feather Falling II\n\nCustom-enchanted for the skater in you. Perfect for zooming past slow-walking villagers in lecture halls and cruising through new campus terrain with 1 heart of stamina left. Same board, same balance, same fearless line you always took at the skatepark.'
+    },
+    {
+      img: 'item-totem.jpg',
+      name: 'Totem of Undying',
+      lore: 'Regeneration II · Cheating Death\n\nHeld in your off-hand at all times. When your health bar hits zero due to intense finals, doubt, or missing home, this totem pops automatically with a loud chime and stands you back up glowing. Consider it a permanent gift from back home: you don’t get to give up! (Or you can always call us when you feel like giving up).'
+    },
+    {
+      img: 'item-ender-pearl.jpg',
+      name: '16x Ender Pearl',
+      lore: 'Instant Teleportation · Waypoint Home\n\nNo matter how far your new quest takes you across the map, throw this whenever you need a quick escape or miss the old server. Takes a tiny bit of fall damage but it instantly brings you right back to where you belong. You’ll always know your way back home!'
+    }
   ];
 
   function buildInventory(){
